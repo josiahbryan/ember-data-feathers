@@ -1,6 +1,13 @@
 # ember-data-feathers
 
-This README outlines the details of collaborating on this Ember addon.
+I've forked this addon from `huafu/ember-data-feathers` because that repo appears unmaintained.
+
+Primarily, I wanted to bump `ember-cli-babel` version so `ember serve` stops complaining during development of my app. 
+
+I may add bugfixes or other tweaks as my use cases call for them. PRs welcome.
+
+**Original boilerplate text follows**
+
 
 ## Installation
 

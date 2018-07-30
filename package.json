@@ -1,6 +1,6 @@
 {
   "name": "ember-data-feathers",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Adapter and tools to connect to a FeathersJS backend.",
   "keywords": [
     "ember-addon",
@@ -11,20 +11,20 @@
     "realtime"
   ],
   "license": "MIT",
-  "author": "Huafu Gandon <huafu.gandon@gmail.com>",
+  "author": "Josiah Bryan <josiahbryan@gmail.com>",
   "directories": {
     "doc": "doc",
     "test": "tests"
   },
-  "repository": "https://github.com/huafu/ember-data-feathers.git",
+  "repository": "https://github.com/josiahbryan/ember-data-feathers.git",
   "scripts": {
     "build": "ember build",
     "start": "ember server",
     "test": "ember try:each"
   },
   "dependencies": {
-    "ember-cli-babel": "^5.1.7",
-    "feathers-client": "2.0.0-pre.2",
+    "ember-cli-babel": "*",
+    "feathers-client": "2.0.0",
     "socket.io-client": "^1.7.3"
   },
   "devDependencies": {
