@@ -1,9 +1,15 @@
 /* globals io */
-import Ember from 'ember';
-import { default as feathers } from 'feathers';
-import FeathersSocketAdapter from '../adapters/feathers-socket';
+import { readOnly, reads, alias, not } from '@ember/object/computed';
+import Evented from '@ember/object/evented';
+import Service, { inject as service } from '@ember/service';
+import EmberObject, { computed } from '@ember/object';
+import { run } from '@ember/runloop';
+import RSVP from 'rsvp';
+import { isArray } from '@ember/array';
+import { pluralize, singularize } from 'ember-inflector'
 
-const { computed, inject, run, String: { pluralize, singularize }, RSVP, isArray } = Ember;
+import { default as feathers } from 'feathers';
+import FeathersSocketAdapter from 'ember-data-feathers/adapters/feathers-socket';
 
 const DEFAULT_SOCKET_OPTIONS = { timeout: 10000 };
 const TIMEOUT_REGEXP = /^Timeout of \d+ms /;
@@ -252,7 +258,7 @@ class ServiceRegistry extends Array {
  * @class EventsQueue
  * @extends {Ember.Object}
  */
-const EventsQueue = Ember.Object.extend({
+const EventsQueue = EmberObject.extend({
   /**
    * @type {Array.<EventsQueueItem>}
    */
@@ -326,18 +332,20 @@ const EventsQueue = Ember.Object.extend({
  * @extends {Ember.Service}
  * @mixes {Ember.Evented}
  */
-export default Ember.Service.extend(Ember.Evented, {
-  store: inject.service(),
+export default Service.extend(Evented, {
+  store: service(),
 
-  config: computed.readOnly('appConfig.feathers'),
-  socketUrl: computed.reads('config.socketUrl'),
-  updateUsesPatch: computed.reads('config.updateUsesPatch'),
-  socketOptions: computed.reads('config.socketOptions'),
-  collectStats: computed.reads('config.collectStatistics'),
+  config: readOnly('appConfig.feathers'),
+  socketUrl: reads('config.socketUrl'),
+  updateUsesPatch: reads('config.updateUsesPatch'),
+  socketOptions: reads('config.socketOptions'),
+  collectStats: reads('config.collectStatistics'),
 
   socket: computed('socketUrl', {
     get() {
-      return io(this.get('socketUrl'), this.get('socketOptions') || DEFAULT_SOCKET_OPTIONS);
+    const url = 'http://sleepycatgame.local:3030'; //this.get('socketUrl');
+    console.warn("socketUrl:", url);
+      return io(url, this.get('socketOptions') || DEFAULT_SOCKET_OPTIONS);
     },
     set(key, value) {
       // ensure the old socket if any is closed
@@ -346,7 +354,7 @@ export default Ember.Service.extend(Ember.Evented, {
       return value;
     }
   }),
-  app: computed.alias('client'),
+  app: alias('client'),
   client: computed('socket', {
     get() {
       const socket = this.get('socket');
@@ -388,7 +396,7 @@ export default Ember.Service.extend(Ember.Evented, {
     }
   },
 
-  isOffline: computed.not('isOnline'),
+  isOffline: not('isOnline'),
   isOnline: computed({
     get() {
       return false;
@@ -469,7 +477,7 @@ export default Ember.Service.extend(Ember.Evented, {
   isIdle: computed('runningPromise', 'eventsQueue.isIdle', function () {
     return !this.get('runningPromise') && this.get('eventsQueue.isIdle');
   }),
-  isRunning: computed.not('isIdle'),
+  isRunning: not('isIdle'),
 
 
   /**
@@ -481,8 +489,12 @@ export default Ember.Service.extend(Ember.Evented, {
 
   services: computed(function () {
     const owner = this;
-    return Ember.Object.extend({
+    return EmberObject.extend({
       unknownProperty(key) {
+        if(key === 'unknownProperty' || key === 'setUnknownProperty')
+          return null;
+
+        // console.log('[services/feathers/services/unknownProperty] key=', key);
         if (!owner.isDestroyed && !owner.isDestroying) {
           return this.set(key, owner.setupService(key));
         }
@@ -554,6 +566,7 @@ export default Ember.Service.extend(Ember.Evented, {
     this.get(`services.${serviceName}`)[method](...args)
       .then((response) => {
         logStat();
+        // console.log(`services.${serviceName}.${method}: response=`, response);
         this.touch('response');
         this.debug && this.debug(
           `[${serviceName}][${method}] sent %O <=> received %O in ${Math.round(stat.time)}ms`,

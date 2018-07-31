@@ -1,8 +1,13 @@
-import Ember from 'ember';
+import { inject as service } from '@ember/service';
+import RSVP from 'rsvp';
+import { run } from '@ember/runloop';
+import { assert } from '@ember/debug';
+import { get, computed } from '@ember/object';
+import { typeOf } from '@ember/utils';
+import { isArray } from '@ember/array';
+// import $ from 'jquery';
 import DS from 'ember-data';
 import ERRORS from '../utils/feathers/errors';
-
-const { inject, RSVP, run, computed, assert, get, typeOf, isArray, $ } = Ember;
 
 
 const METHODS_MAP = {
@@ -12,7 +17,7 @@ const METHODS_MAP = {
   remove: { eventType: 'removed', lock: true },
 };
 
-const RELATIONSHIP_LINK_PARSER = /^\/([a-z0-9_\/-]+)(?:\/([a-z0-9_:-]+)|\?(.+))$/i;
+const RELATIONSHIP_LINK_PARSER = /^\/([a-z0-9_\/-]+)(?:\/([a-z0-9_:-]+)|\?(.+))$/i; // eslint-disable-line no-useless-escape
 
 const parseQueryString = (function () {
   const setValue = function (root, path, value) {
@@ -39,7 +44,7 @@ const parseQueryString = (function () {
       const name = decodeURIComponent(pair[0]);
       const value = decodeURIComponent(pair[1]);
 
-      let path = name.match(/(^[^\[]+)(\[.*\]$)?/);
+      let path = name.match(/(^[^\[]+)(\[.*\]$)?/);// eslint-disable-line no-useless-escape
       const first = path[1];
       if (path[2]) {
         //case of 'array[level1]' || 'array[level1][level2]'
@@ -65,7 +70,7 @@ export default DS.Adapter.extend({
 
   coalesceFindRequests: true,
 
-  feathers: inject.service(),
+  feathers: service(),
 
   debug() {
     const feathers = this.get('feathers');
@@ -102,12 +107,16 @@ export default DS.Adapter.extend({
   },
 
   queryRecord(store, type, query/*, recordArray*/) {
+    if(query.query && !query.query.$limit)
+      query.query.$limit = 1;
     return this.serviceCall(type, 'find', query)
       .then((response) => {
         const count = get(response, 'data.length');
-        assert(`Loaded a unique record but got ${count} records`, count <= 1);
-        return response.data[0] || null;
-      });
+        // assert(`Loaded a unique record but got ${count} records`, count <= 1);
+      if(count > 1) // || !count)
+        console.error(`Loaded a unique record but got ${count} records`, { response }); // eslint-disable-line no-console
+      return response.data[0] || null;
+    });
   },
 
 
@@ -190,17 +199,19 @@ export default DS.Adapter.extend({
   },
 
   handleServiceResponse(data, options) {
-    const { modelName, methodName, args, serviceName } = options;
+    const { modelName, methodName, args, serviceName } = options; // eslint-disable-line no-unused-vars
     if (METHODS_MAP.hasOwnProperty(methodName) && METHODS_MAP[methodName].lock) {
       this.discardOnce(modelName, METHODS_MAP[methodName].eventType, data);
     }
     if (methodName === 'find' && !isArray(data) && !get(args, '0.query.$limit')) {
-      return this.handlePaginatedServiceResponse(data, {
-        serviceCall: run.bind(this.get('feathers'), 'serviceCall', serviceName, methodName),
-        serviceName,
-        params: $.extend(true, {}, args[0] || {}),
-        errorHandler: (error) => run(this, 'handleServiceError', error, { modelName, methodName, args, serviceName })
-      });
+      console.warn("[handleServiceResponse] situation (methodName === 'find' && !isArray(data) && !get(args, '0.query.$limit') - not sure why this was special...if bugs, investigate this block."); // eslint-disable-line no-console
+      
+      // return this.handlePaginatedServiceResponse(data, {
+      //   serviceCall: run.bind(this.get('feathers'), 'serviceCall', serviceName, methodName),
+      //   serviceName,
+      //   params: $.extend(true, {}, args[0] || {}),
+      //   errorHandler: (error) => run(this, 'handleServiceError', error, { modelName, methodName, args, serviceName })
+      // });
     }
     return data;
   },
