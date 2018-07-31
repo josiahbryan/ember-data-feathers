@@ -343,8 +343,7 @@ export default Service.extend(Evented, {
 
 	socket: computed('socketUrl', {
 		get() {
-		const url = 'http://sleepycatgame.local:3030'; //this.get('socketUrl');
-		console.warn("socketUrl:", url);
+			const url = this.get('socketUrl');
 			return io(url, this.get('socketOptions') || DEFAULT_SOCKET_OPTIONS);
 		},
 		set(key, value) {
