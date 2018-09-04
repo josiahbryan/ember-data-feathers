@@ -1,6 +1,6 @@
 # ember-data-feathers
 
-I've forked this addon from `huafu/ember-data-feathers` because that repo appears unmaintained.
+I (josiahbryan) forked this addon from `huafu/ember-data-feathers` because that repo appears unmaintained.
 
 Primarily, I wanted to bump `ember-cli-babel` version so `ember serve` stops complaining during development of my app. 
 
